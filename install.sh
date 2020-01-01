@@ -1,35 +1,19 @@
 #!/usr/bin/env sh
 
+set -e
+
 check_net() {
 	wget --spider --quiet google.com
-    if [[ "$?" != 0 ]]; then
-    	echo "No internet connection!"
-        exit(1)
-    fi
 }
 
 setup_time() {
 	timedatectl set-ntp true
-    if [[ "$?" != 0 ]]; then
-        echo "'timedatectl set-ntp true' failed!"
-    	exit(1)
-    fi
-}
-
 one_partition_and_mount() {
     fdisk -l
     echo "Enter the full path to the drive:\n"
     read drive
 	cfdisk $drive
-    if [[ "$?" != 0 ]]; then
-    	echo "failed to parition disk"
-        exit(1)
-    fi
     mkfs.ext4 "${drive}1"
-    if [[ "$?" != 0 ]]; then
-    	echo "failed to format partition"
-        exit(1)
-    fi
     mount "${drive}1" /mnt
 }
 
@@ -57,10 +41,6 @@ install_packages() {
         gvim \
         network-manager \
         network-manager-applet
-    if [[ "$?" != 0 ]]; then
-    	echo "pacstrap failed!"
-        exit(1)
-    fi
 }
 
 configure() {
