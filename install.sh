@@ -8,24 +8,41 @@ check_net() {
 
 setup_time() {
 	timedatectl set-ntp true
-one_partition_and_mount() {
+}
+
+instructions() {
+    echo -e "\n\nInstallingStompix\n"
+    echo "The partition scheme is hard coded into the install.sh script. If your needs differ, you should alter the function partition_and_mount()"
+    echo -e "Note: your system must support UEFI boot to install via this script\n"
+}
+
+partition_and_mount() {
+    echo "Examine the following fdisk output"
+    echo "When prompted, enter the full path to the target drive."
     fdisk -l
-    echo "Enter the full path to the drive:\n"
+    echo "Enter the full path to the drive:"
     read drive
 	cfdisk $drive
-    mkfs.ext4 "${drive}1"
-    mount "${drive}1" /mnt
+    # All in one partition
+    mkfs.ext4 "${drive}2"
+    mount "${drive}2" /mnt
+    # Separate home partition
+    # mkfs.ext4 "${drive}1"
+    # mount "${drive}" /mnt
+    # mkdir /mnt/home
+    # mkfs.ext4 "{$drive}2"
+    # mount "${drive}" /mnt/home
 }
 
 rank_mirrors() {
-    pacd = /etc/pacman.d
+    pacd=/etc/pacman.d
     pacman -Sy --noconfirm pacman-contrib
     cp $pacd/mirrorlist $pacd/mirrorlist.backup
-    rankmirrors -v -n6 $pacd/mirrorlist.backup > $pacd/mirrorlist
+    rankmirrors -v -n 6 $pacd/mirrorlist.backup > $pacd/mirrorlist
 }
 
 install_packages() {
-    echo -e "[dvzrv]\nServer = https://pkgbuild.com/~dvzrv/x86_64" >> /etc/pacman.conf
+    echo -e "[dvzrv]\nServer = https://pkgbuild.com/~dvzrv/repo/x86_64" >> /etc/pacman.conf
 	pacman -Syy
     pacstrap /mnt \
     	base \
@@ -39,7 +56,7 @@ install_packages() {
         firefox \
         rxvt-unicode \
         gvim \
-        network-manager \
+        networkmanager \
         network-manager-applet
 }
 
@@ -62,17 +79,16 @@ configure() {
     passwd
 }
 
-install_bootloader() {
-	
-}
-
 main() {
+    clear
+    instructions
 	# loadkeys
     check_net
     setup_time
-    one_partition_and_mount
+    partition_and_mount
     rank_mirrors
     install_packages
 }
 
 main
+set +e
