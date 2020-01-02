@@ -2,6 +2,14 @@
 
 set -e
 
+check_uefi() {
+    ls /sys/firmware/efi/efivars > /dev/null 2>&1
+    if [[ "$?" != 0 ]]; then
+        echo "UEFI is required to install stompix using this script."
+        exit 1
+    fi
+}
+
 check_net() {
 	wget --spider --quiet google.com
 }
@@ -13,7 +21,6 @@ setup_time() {
 instructions() {
     echo -e "\n\nInstallingStompix\n"
     echo "The partition scheme is hard coded into the install.sh script. If your needs differ, you should alter the function partition_and_mount()"
-    echo -e "Note: your system must support UEFI boot to install via this script\n"
 }
 
 partition_and_mount() {
@@ -24,8 +31,8 @@ partition_and_mount() {
     read drive
 	cfdisk $drive
     # All in one partition
-    mkfs.ext4 "${drive}2"
-    mount "${drive}2" /mnt
+    mkfs.ext4 "${drive}1"
+    mount "${drive}1" /mnt
     # Separate home partition
     # mkfs.ext4 "${drive}1"
     # mount "${drive}" /mnt
@@ -35,6 +42,8 @@ partition_and_mount() {
 }
 
 rank_mirrors() {
+    echo -e "\nRanking mirrors..."
+    echo "this may take some time"
     pacd=/etc/pacman.d
     pacman -Sy --noconfirm pacman-contrib
     cp $pacd/mirrorlist $pacd/mirrorlist.backup
@@ -82,7 +91,7 @@ configure() {
 main() {
     clear
     instructions
-	# loadkeys
+    check_uefi
     check_net
     setup_time
     partition_and_mount
